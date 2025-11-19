@@ -76,7 +76,64 @@ class PendaftarController extends Controller
     public function report()
     {
         $pendaftars = Pendaftar::with('lowongan.departemen')->get();
-        return view('pendaftar.report', compact('pendaftars'));
+        
+        // Get all lowongan with their departemen
+        $lowongans = Lowongan::with('departemen', 'pendaftars')->get();
+        
+        // Group by department
+        $departmentStats = [];
+        $totalKuota = 0;
+        $totalDiterima = 0;
+        $totalDitolak = 0;
+        
+        foreach ($lowongans as $lowongan) {
+            $deptName = $lowongan->departemen->name;
+            
+            if (!isset($departmentStats[$deptName])) {
+                $departmentStats[$deptName] = [
+                    'total_kuota' => 0,
+                    'diterima' => 0,
+                    'ditolak' => 0,
+                ];
+            }
+            
+            $departmentStats[$deptName]['total_kuota'] += $lowongan->quota;
+            $totalKuota += $lowongan->quota;
+            
+            foreach ($lowongan->pendaftars as $pendaftar) {
+                if ($pendaftar->status === 'accepted') {
+                    $departmentStats[$deptName]['diterima']++;
+                    $totalDiterima++;
+                } elseif ($pendaftar->status === 'rejected') {
+                    $departmentStats[$deptName]['ditolak']++;
+                    $totalDitolak++;
+                }
+            }
+        }
+        
+        // Calculate sisa kuota
+        foreach ($departmentStats as $dept => &$stats) {
+            $stats['sisa_kuota'] = $stats['total_kuota'] - $stats['diterima'];
+        }
+        
+        $sisaKuota = $totalKuota - $totalDiterima;
+        
+        // Status summary
+        $statusStats = [
+            'diterima' => $pendaftars->where('status', 'accepted')->count(),
+            'ditolak' => $pendaftars->where('status', 'rejected')->count(),
+            'pending' => $pendaftars->where('status', 'pending')->count(),
+        ];
+        
+        return view('pendaftar.report', compact(
+            'pendaftars',
+            'departmentStats',
+            'totalKuota',
+            'totalDiterima',
+            'totalDitolak',
+            'sisaKuota',
+            'statusStats'
+        ));
     }
 }
 
