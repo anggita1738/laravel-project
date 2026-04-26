@@ -4,8 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Sistem Manajemen Magang')</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+<script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {},
+            }
+        }
+    </script>
 <body class="bg-gray-50 min-h-screen">
     @auth
         <nav class="bg-white shadow-lg border-b border-gray-200">
